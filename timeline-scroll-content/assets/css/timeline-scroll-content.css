@@ -1,0 +1,319 @@
+/*
+ * ND Process Timeline
+ * Defaults reproduce the design. Elementor style controls override them through
+ * more specific {{WRAPPER}} selectors and the custom properties below.
+ * Logical properties are used throughout, so the widget works in RTL and LTR.
+ */
+
+.nd-pt {
+	--nd-pt-title: #1D2224;
+	--nd-pt-text: #5B605F;
+	--nd-pt-dim: #8B9296;
+	--nd-pt-rail: rgba(29, 34, 36, 0.14);
+	--nd-pt-node-bg: #FFFFFF;
+	--nd-pt-node-border: rgba(29, 34, 36, 0.18);
+	--nd-pt-node-text: #8B9296;
+	--nd-pt-media-bg: rgba(29, 34, 36, 0.06);
+	--nd-pt-accent: #FA3000;
+
+	--nd-pt-node: 40px;
+	--nd-pt-rail-w: 2px;
+	--nd-pt-speed: 400ms;
+	--nd-pt-detail-speed: 450ms;
+	--nd-pt-shift: 14px;
+
+	/* layout mode: split (sticky panel + timeline) */
+	--nd-pt-cols: minmax(0, 1fr) minmax(0, 1fr);
+	--nd-pt-panel-display: grid;
+	--nd-pt-inline-display: none;
+
+	background: transparent;
+	color: var(--nd-pt-title);
+}
+
+/* Fallback when the Elementor layout control has not output its CSS: stacked up to the tablet breakpoint */
+@media (max-width: 1024px) {
+	.nd-pt {
+		--nd-pt-cols: minmax(0, 1fr);
+		--nd-pt-panel-display: none;
+		--nd-pt-inline-display: block;
+	}
+}
+
+.nd-pt,
+.nd-pt *,
+.nd-pt *::before,
+.nd-pt *::after {
+	box-sizing: border-box;
+}
+
+.nd-pt .nd-pt__step-title,
+.nd-pt .nd-pt__heading,
+.nd-pt .nd-pt__text,
+.nd-pt .nd-pt__body {
+	overflow-wrap: anywhere;
+}
+
+/* ---------- Layout ---------- */
+
+.nd-pt__layout {
+	display: grid;
+	grid-template-columns: var(--nd-pt-cols);
+	column-gap: 80px;
+	max-width: 1120px;
+	margin-inline: auto;
+	padding-inline: 32px;
+}
+
+.nd-pt--no-detail .nd-pt__layout {
+	grid-template-columns: minmax(0, 1fr);
+}
+
+/* ---------- Detail panel (sticky) ---------- */
+
+.nd-pt__panel {
+	position: sticky;
+	top: 12vh;
+	align-self: start;
+	display: var(--nd-pt-panel-display);
+}
+
+/* every detail sits in the same grid cell, so the panel keeps the height of the tallest one */
+.nd-pt__detail {
+	grid-area: 1 / 1;
+	opacity: 0;
+	visibility: hidden;
+	transform: translateY(var(--nd-pt-shift));
+	transition:
+		opacity var(--nd-pt-detail-speed) ease,
+		transform var(--nd-pt-detail-speed) ease,
+		visibility 0s linear var(--nd-pt-detail-speed);
+}
+
+.nd-pt__detail.is-current {
+	opacity: 1;
+	visibility: visible;
+	transform: none;
+	transition:
+		opacity var(--nd-pt-detail-speed) ease,
+		transform var(--nd-pt-detail-speed) ease,
+		visibility 0s;
+}
+
+/* the copy that lives inside each step (stacked layout) */
+.nd-pt__inline {
+	display: var(--nd-pt-inline-display);
+	margin-block-start: 20px;
+}
+
+.nd-pt .nd-pt__eyebrow {
+	display: block;
+	margin: 0 0 10px;
+	font-size: 0.78rem;
+	font-weight: 700;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: var(--nd-pt-accent);
+}
+
+.nd-pt .nd-pt__heading {
+	margin: 0 0 14px;
+	font-size: 2rem;
+	font-weight: 500;
+	line-height: 1.2;
+	letter-spacing: -0.01em;
+	color: var(--nd-pt-title);
+}
+
+.nd-pt .nd-pt__body {
+	margin: 0 0 24px;
+	max-width: 520px;
+	font-size: 1rem;
+	line-height: 1.7;
+	color: var(--nd-pt-text);
+}
+
+/* ---------- Images ---------- */
+
+.nd-pt__media {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 12px;
+}
+
+.nd-pt .nd-pt__img {
+	display: block;
+	width: 100%;
+	height: auto;
+	max-width: 100%;
+	object-fit: cover;
+	border-radius: 12px;
+	background-color: var(--nd-pt-media-bg);
+	color: transparent; /* hide the alt text if an image fails to load */
+	transition: filter var(--nd-pt-speed) ease;
+}
+
+/* the first image is the large one, the rest sit in a row below it */
+.nd-pt .nd-pt__img--main {
+	grid-column: 1 / -1;
+	aspect-ratio: 16 / 9;
+}
+
+.nd-pt .nd-pt__img--sub {
+	aspect-ratio: 16 / 10;
+}
+
+/* a step with only two images: the single small one spans the full width */
+.nd-pt .nd-pt__media--2 .nd-pt__img--sub {
+	grid-column: 1 / -1;
+	aspect-ratio: 16 / 7;
+}
+
+/* keep the sticky panel shorter than the screen */
+.nd-pt__panel .nd-pt__img--main {
+	max-height: 34vh;
+}
+
+.nd-pt__panel .nd-pt__img--sub {
+	max-height: 18vh;
+}
+
+/* short windows: drop the small images from the panel (toggle: "Hide small images on short screens") */
+@media (max-height: 700px) {
+	.nd-pt-short-hide-yes .nd-pt__panel .nd-pt__img--sub {
+		display: none;
+	}
+}
+
+/* ---------- Timeline ---------- */
+
+.nd-pt__timeline {
+	position: relative;
+	/* extra room so the last step can reach the trigger line and the sticky panel stays until then */
+	padding-block-end: 42vh;
+}
+
+.nd-pt__rail {
+	position: absolute;
+	top: calc(var(--nd-pt-node) / 2);
+	inset-inline-start: calc((var(--nd-pt-node) - var(--nd-pt-rail-w)) / 2);
+	width: var(--nd-pt-rail-w);
+	height: 0; /* set by JS: ends exactly at the centre of the last node */
+	background: var(--nd-pt-rail);
+	border-radius: 2px;
+}
+
+.nd-pt__rail-fill {
+	position: absolute;
+	top: 0;
+	inset-inline-start: 0;
+	width: 100%;
+	height: 0;
+	background: var(--nd-pt-accent);
+	border-radius: inherit;
+	transition: height 0.1s linear;
+}
+
+.nd-pt .nd-pt__steps {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	flex-direction: column;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.nd-pt .nd-pt__step {
+	display: flex;
+	align-items: flex-start;
+	gap: 26px;
+	margin: 0;
+	padding: 0;
+}
+
+/* tall enough that each step gets its own stretch of scrolling */
+.nd-pt .nd-pt__step:not(:last-child) {
+	padding-block-end: 24vh;
+}
+
+.nd-pt__node {
+	flex: 0 0 var(--nd-pt-node);
+	width: var(--nd-pt-node);
+	height: var(--nd-pt-node);
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--nd-pt-node-bg);
+	border: 1px solid var(--nd-pt-node-border);
+	font-size: 0.9rem;
+	font-weight: 700;
+	line-height: 1;
+	color: var(--nd-pt-node-text);
+	transition:
+		border-color var(--nd-pt-speed) ease,
+		color var(--nd-pt-speed) ease,
+		background var(--nd-pt-speed) ease,
+		box-shadow var(--nd-pt-speed) ease;
+}
+
+.nd-pt__step.is-active .nd-pt__node {
+	background: var(--nd-pt-accent);
+	border-color: var(--nd-pt-accent);
+	color: #F7F5F1;
+	box-shadow: 0 0 0 4px rgba(250, 48, 0, 0.18);
+}
+
+.nd-pt__content {
+	min-width: 0;
+	padding-block-start: 5px;
+}
+
+.nd-pt .nd-pt__step-title {
+	margin: 0 0 10px;
+	font-size: 1.45rem;
+	font-weight: 500;
+	line-height: 1.3;
+	color: var(--nd-pt-title);
+	opacity: 0.4;
+	transition: opacity var(--nd-pt-speed) ease;
+}
+
+.nd-pt .nd-pt__text {
+	margin: 0;
+	max-width: 460px;
+	font-size: 0.96rem;
+	line-height: 1.65;
+	color: var(--nd-pt-dim);
+	opacity: 0.7;
+	transition: opacity var(--nd-pt-speed) ease, color var(--nd-pt-speed) ease;
+}
+
+.nd-pt__step.is-active .nd-pt__step-title {
+	opacity: 1;
+}
+
+.nd-pt__step.is-active .nd-pt__text {
+	opacity: 1;
+	color: var(--nd-pt-text);
+}
+
+/* ---------- Focus & motion ---------- */
+
+.nd-pt a:focus-visible {
+	outline: 2px solid var(--nd-pt-accent);
+	outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.nd-pt__rail-fill,
+	.nd-pt__node,
+	.nd-pt__img,
+	.nd-pt .nd-pt__step-title,
+	.nd-pt .nd-pt__text,
+	.nd-pt__detail,
+	.nd-pt__detail.is-current {
+		transition: none;
+	}
+}
